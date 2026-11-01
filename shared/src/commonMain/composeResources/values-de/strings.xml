@@ -82,7 +82,7 @@
     <string name="action_switch_space">Space wechseln</string>
     <string name="action_upload">Hochladen</string>
     <string name="action_yes">Ja</string>
-    <string name="app_name">kitshn</string>
+    <string name="app_name">Tandoor IA</string>
     <string name="bugsnag_dialog_button_negative">Nein, nicht einverstanden</string>
     <string name="bugsnag_dialog_button_positive">Ja, einverstanden</string>
     <string name="bugsnag_dialog_message">kitshn für iOS benötigt Absturzberichte um verbessert zu werden. Die App nutzt die Bugsnag Platform um dies zu erreichen. Bist du mit automatisch hochgeladenen Absturzberichten einverstanden?\n\nDu kannst deine Auswahl später unter Einstellungen/Verhalten ändern.</string>

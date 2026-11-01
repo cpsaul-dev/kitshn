@@ -84,7 +84,7 @@
         <item quantity="one">Verwijder boek</item>
         <item quantity="other">Verwijder boeken</item>
     </plurals>
-    <string name="app_name">kitshn</string>
+    <string name="app_name">Tandoor IA</string>
     <string name="action_more">Meer</string>
     <plurals name="action_delete_recipe_book_entries_description">
         <item quantity="one">Weet je zeker dat je dit item wilt verwijderen?</item>

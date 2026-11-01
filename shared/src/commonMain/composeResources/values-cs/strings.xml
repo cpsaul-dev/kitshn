@@ -41,7 +41,7 @@
     <string name="action_support">Podpořit</string>
     <string name="action_upload">Nahrát</string>
     <string name="action_yes">Ano</string>
-    <string name="app_name">kitshn</string>
+    <string name="app_name">Tandoor IA</string>
     <string name="bugsnag_dialog_button_negative">Ne, nepovolovat</string>
     <string name="bugsnag_dialog_button_positive">Ano, povolit</string>
     <string name="bugsnag_dialog_message">Ke zlepšení kitshn na iOS jsou potřeba záznamy pádů. K tomu aplikace používá knihovnu/platformu Bugsnag. Chcete povolit nahrávání detailů ohledně pádů a chyb v aplikaci?\n\nSvou volbu můžete kdykoliv změnit v Nastavení/Chování.</string>

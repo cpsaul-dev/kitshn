@@ -63,7 +63,7 @@
     <string name="action_support">支持</string>
     <string name="action_upload">上传</string>
     <string name="action_yes">是</string>
-    <string name="app_name">kitshn</string>
+    <string name="app_name">Tandoor IA</string>
     <string name="bugsnag_dialog_button_negative">不，不允许</string>
     <string name="bugsnag_dialog_button_positive">是，允许</string>
     <string name="bugsnag_dialog_message">kitshn iOS 版依赖崩溃报告来改进应用。该应用使用 Bugsnag 库/平台来实现此功能。您是否同意自动上传崩溃和错误的详细信息？\n\n此选项可在「设置/行为」中更改。</string>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">kitshn</string>
+    <string name="app_name">Tandoor IA</string>
     <string name="common_import_recipe">Retsepti import</string>
     <string name="shortcuts_meal_plan_label_long">Ava menüü</string>
     <string name="shortcuts_shopping_label_long">Ava ostunimekiri</string>

@@ -286,7 +286,7 @@
     <string name="tandoor_compatibility_not_checkable_label">பொருந்தக்கூடிய தன்மையை சரிபார்க்க முடியாது</string>
     <string name="tandoor_compatibility_unknown_description">உங்கள் தந்தூர் சேவையகத்தின் பதிப்பு இன்னும் சரிபார்க்கப்படவில்லை. பயன்பாட்டின் செயல்பாடு பலவீனமடையக்கூடும்.</string>
     <string name="tandoor_compatibility_unknown_label">பொருந்தக்கூடிய தன்மை தெரியவில்லை</string>
-    <string name="app_name">கிட்ச்ன்</string>
+    <string name="app_name">Tandoor IA</string>
     <string name="common_comment">கருத்து</string>
     <string name="common_error_report">பிழை அறிக்கை</string>
     <string name="common_import_recipe">இறக்குமதி செய்முறை</string>

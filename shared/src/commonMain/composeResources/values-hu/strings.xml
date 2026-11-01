@@ -74,7 +74,7 @@
     <string name="action_take_new_photo">Új fénykép készítése</string>
     <string name="action_upload">Feltöltés</string>
     <string name="action_yes">Igen</string>
-    <string name="app_name">kitshn</string>
+    <string name="app_name">Tandoor IA</string>
     <string name="beta_dialog_title">kitshn béta</string>
     <string name="beta_dialog_description">Köszönöm, hogy kipróbálod a kitshn bétát. Lehetnek kompatibilitási problémák. Hiba jelentés lehetőségeket megtalálod a » Beállítások / Névjegy « menüpont alatt.\n\nJó szórakozást a főzéshez a kitshn segítségével! 😄</string>
     <string name="bugsnag_dialog_button_negative">Nem engedélyezem</string>

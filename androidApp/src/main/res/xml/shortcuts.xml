@@ -11,7 +11,7 @@
         <intent
             android:action="android.intent.action.VIEW"
             android:data="new_instance"
-            android:targetPackage="de.kitshn.android"
+            android:targetPackage="dev.cpsaul.tandoorai"
             android:targetClass="de.kitshn.NewInstanceActivity" />
     </shortcut>
 
@@ -26,7 +26,7 @@
         <intent
             android:action="android.intent.action.VIEW"
             android:data="shortcut/mealplan"
-            android:targetPackage="de.kitshn.android"
+            android:targetPackage="dev.cpsaul.tandoorai"
             android:targetClass="de.kitshn.AppActivity" />
     </shortcut>
 
@@ -41,7 +41,7 @@
         <intent
             android:action="android.intent.action.VIEW"
             android:data="shortcut/shopping"
-            android:targetPackage="de.kitshn.android"
+            android:targetPackage="dev.cpsaul.tandoorai"
             android:targetClass="de.kitshn.AppActivity" />
     </shortcut>
 
@@ -56,7 +56,7 @@
         <intent
             android:action="android.intent.action.VIEW"
             android:data="shortcut/shoppingMode"
-            android:targetPackage="de.kitshn.android"
+            android:targetPackage="dev.cpsaul.tandoorai"
             android:targetClass="de.kitshn.AppActivity" />
     </shortcut>
 
@@ -71,7 +71,7 @@
         <intent
             android:action="android.intent.action.VIEW"
             android:data="shortcut/books"
-            android:targetPackage="de.kitshn.android"
+            android:targetPackage="dev.cpsaul.tandoorai"
             android:targetClass="de.kitshn.AppActivity" />
     </shortcut>
 </shortcuts>

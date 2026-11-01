@@ -81,7 +81,7 @@
     <string name="action_switch_space">Alanı Değiştir</string>
     <string name="action_upload">Yükle</string>
     <string name="action_yes">Evet</string>
-    <string name="app_name">kitshn</string>
+    <string name="app_name">Tandoor IA</string>
     <string name="bugsnag_dialog_button_negative">Hayır, izin verme</string>
     <string name="bugsnag_dialog_button_positive">Evet, izin ver</string>
     <string name="bugsnag_dialog_message">iOS için kitshn, geliştirme için kaza raporlamasına bağımlıdır. Uygulama bunu gerçekleştirmek için Bugsnag kütüphanesini/platformunu kullanır. Kaza ve hata detaylarının otomatik olarak yüklenmesine izin vermenizde sakınca var mı?\n\nBu seçim Ayarlar/Davranış bölümünden değiştirilebilir.</string>

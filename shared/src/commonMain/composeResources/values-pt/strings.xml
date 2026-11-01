@@ -74,7 +74,7 @@
     <string name="action_take_new_photo">Tirar uma nova foto</string>
     <string name="action_upload">Upload</string>
     <string name="action_yes">Sim</string>
-    <string name="app_name">kitshn</string>
+    <string name="app_name">Tandoor IA</string>
     <string name="beta_dialog_title">kitshn Beta</string>
     <string name="beta_dialog_description">Obrigado por experimentar kitshn Beta. Esta versão ainda pode conter problemas de compatibilidade. Pode relatar bugs e erros usando qualquer uma das opções de contacto listadas em » Configurações / Sobre «.\n\nDivirta-se enquanto coze com kitshn! 😄</string>
     <string name="bugsnag_dialog_button_negative">Não, não permitir</string>

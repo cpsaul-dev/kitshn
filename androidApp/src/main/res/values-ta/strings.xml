@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">கிட்ச்ன்</string>
+    <string name="app_name">Tandoor IA</string>
     <string name="common_import_recipe">இறக்குமதி செய்முறை</string>
     <string name="shortcuts_new_instance_label_long">புதிய நிகழ்வை உருவாக்கவும்</string>
     <string name="shortcuts_new_instance_label_short">புதிய நிகழ்வு</string>

@@ -124,7 +124,7 @@
     <string name="tandoor_compatibility_mixed_compatibility_description">Niektóre funkcje twojego serwera Tandoor mogą być nie wspierane przez tą aplikację. Aby używać wszystkich funkcji tej aplikacji zaaktualizuj twój serwer do jednej z tych wersji.</string>
     <string name="tandoor_compatibility_mixed_compatibility_label">Częściowo kompatybilna</string>
     <string name="acra_dialog_button_positive">Wyślij</string>
-    <string name="app_name">kitshn</string>
+    <string name="app_name">Tandoor IA</string>
     <string name="beta_dialog_description">Dziękuję za testowanie kitshn Beta. Ta wersja może zawierać problemy z kompatybilnością. Możesz zgłaszać błędy i problemy za pomocą wymienionych opcji w » Ustawienia / O aplikacji «.\n\nBaw się dobrze gotując z kitshn! 😄</string>
     <string name="action_next">Dalej</string>
     <string name="action_abort">Anuluj</string>

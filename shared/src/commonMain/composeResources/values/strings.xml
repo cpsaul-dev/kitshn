@@ -98,7 +98,7 @@
     <string name="action_create_meal_type">New meal type</string>
     <string name="action_edit_meal_type">Edit meal type</string>
 
-    <string name="app_name">kitshn</string>
+    <string name="app_name">Tandoor IA</string>
 
     <string name="beta_dialog_title">kitshn Beta</string>
     <string name="beta_dialog_description">Thank you for trying out the kitshn Beta. This version might still contain compatibility issues. You can report bugs and errors using any of the contact options listed at » Settings / About «.\n\nHave fun while cooking with kitshn! 😄</string>

@@ -280,7 +280,7 @@
     <string name="action_saving">Enregistrement …</string>
     <string name="action_remove_from_favorites">Retirer des favoris</string>
     <string name="action_reorder">Réorganiser</string>
-    <string name="app_name">kitshn</string>
+    <string name="app_name">Tandoor IA</string>
     <string name="recipe_step_timer_error_no_app">Vous devez installer une application de minuterie compatible pour cette action !</string>
     <string name="search_ingredients">Rechercher des ingrédients</string>
     <string name="search_ingredients_filter">Filtrer par ingrédients</string>

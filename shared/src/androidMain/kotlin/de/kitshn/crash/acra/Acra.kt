@@ -7,7 +7,13 @@ import org.acra.config.httpSender
 import org.acra.data.StringFormat
 import org.acra.ktx.initAcra
 
+/**
+ * Crash reports are only sent when a receiver is configured in kitshn.properties
+ * (acra.http.uri). With an empty value nothing is initialized or sent.
+ */
 fun Application.initKitshnAcra() {
+    if(BuildConfig.ACRA_HTTP_URI.isBlank()) return
+
     initAcra {
         buildConfigClass = BuildConfig::class.java
         reportFormat = StringFormat.JSON

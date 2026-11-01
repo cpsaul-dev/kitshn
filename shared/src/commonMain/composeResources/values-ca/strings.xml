@@ -70,7 +70,7 @@
     <string name="action_take_photo">Fer foto</string>
     <string name="action_upload">Penjar</string>
     <string name="action_yes">Sí</string>
-    <string name="app_name">kitshn</string>
+    <string name="app_name">Tandoor IA</string>
     <string name="beta_dialog_title">kitshn Beta</string>
     <string name="beta_dialog_description">Gràcies per provar el kitshn Beta. Aquesta versió pot contenir problemes de compatibilitat. Pots informar d'errors i incidències utilitzant qualsevol de les opcions de contacte que es troben a » Configuració / Informació «.\n\nDivertiu-vos cuinant amb kitshn! 😄</string>
     <string name="bugsnag_dialog_button_negative">No, no permetis</string>

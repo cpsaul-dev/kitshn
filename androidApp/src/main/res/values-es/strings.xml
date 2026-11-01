@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">kitshn</string>
+    <string name="app_name">Tandoor IA</string>
     <string name="common_import_recipe">Importar recetas</string>
     <string name="shortcuts_new_instance_label_long">Crear una nueva instancia</string>
     <string name="shortcuts_new_instance_label_short">Nueva instancia</string>
