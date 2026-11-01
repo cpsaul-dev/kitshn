@@ -11,5 +11,5 @@
         path="." />
     <exclude
         domain="sharedpref"
-        path="kitshn_secure_credentials.xml" />
+        path="kitshn_credentials.xml" />
 </full-backup-content>

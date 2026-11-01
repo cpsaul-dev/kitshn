@@ -1,9 +1,11 @@
 package de.kitshn.api.tandoor
 
 import co.touchlab.kermit.Logger
+import de.kitshn.isTlsException
 import de.kitshn.json
 import de.kitshn.redactForRelease
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.forms.FormBuilder
 import io.ktor.client.request.forms.MultiPartFormDataContent
@@ -16,11 +18,46 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.readRawBytes
 import io.ktor.client.statement.request
 import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
+
+/**
+ * Coarse error category, so callers can react without inspecting status codes.
+ */
+enum class TandoorErrorKind {
+    /** 401 — token missing, expired or revoked. */
+    Unauthorized,
+
+    /** 403 — authenticated, but not allowed (or missing CSRF/space permission). */
+    Forbidden,
+
+    /** 404 */
+    NotFound,
+
+    /** 429 */
+    RateLimited,
+
+    /** 5xx */
+    ServerError,
+
+    /** Any other 4xx. */
+    ClientError,
+
+    /** No answer within the configured timeout. */
+    Timeout,
+
+    /** TLS handshake / certificate problem. */
+    Tls,
+
+    /** Any other transport failure (DNS, refused, reset, offline, …). */
+    Network
+}
 
 class TandoorRequestsError(
     val throwable: Throwable?,
@@ -40,6 +77,115 @@ class TandoorRequestsError(
 
     /** No response at all — transport failure (DNS, connect, timeout, TLS, …). */
     val isNetworkFailure: Boolean get() = response == null
+
+    /** HTTP status code, or null for transport failures. */
+    val statusCode: Int? get() = response?.status?.value
+
+    val kind: TandoorErrorKind
+        get() {
+            val status = statusCode
+            if(status != null) return when(status) {
+                401 -> TandoorErrorKind.Unauthorized
+                403 -> TandoorErrorKind.Forbidden
+                404 -> TandoorErrorKind.NotFound
+                429 -> TandoorErrorKind.RateLimited
+                in 500..599 -> TandoorErrorKind.ServerError
+                else -> TandoorErrorKind.ClientError
+            }
+
+            val cause = throwable ?: return TandoorErrorKind.Network
+            return when {
+                cause.isTimeoutException() -> TandoorErrorKind.Timeout
+                cause.isTlsException -> TandoorErrorKind.Tls
+                else -> TandoorErrorKind.Network
+            }
+        }
+
+    /** Server-provided Retry-After in seconds (numeric form only). */
+    val retryAfterSeconds: Long?
+        get() = response?.headers?.get(HttpHeaders.RetryAfter)?.trim()?.toLongOrNull()
+}
+
+private fun Throwable.isTimeoutException(): Boolean =
+    generateSequence(this) { it.cause }.any {
+        it is HttpRequestTimeoutException || it::class.simpleName.orEmpty().contains("Timeout")
+    }
+
+private fun TandoorClient.resolveUrl(endpoint: String): String =
+    if(endpoint.startsWith("@")) {
+        "${credentials.instanceUrl}/${endpoint.substring(1)}"
+    } else {
+        "${credentials.instanceUrl}/api${endpoint}"
+    }
+
+private fun HttpRequestBuilder.applyTandoorAuth(credentials: TandoorCredentials) {
+    val token = credentials.token
+    val cookie = credentials.cookie
+
+    headers {
+        if(token != null) set(HttpHeaders.Authorization, "Bearer ${token.token}")
+
+        if(cookie != null) {
+            val csrfToken =
+                cookie.replace(Regex(".*csrftoken="), "").replace(Regex(";.*"), "")
+            set("X-CSRFTOKEN", csrfToken)
+            set(HttpHeaders.Cookie, cookie)
+        }
+
+        credentials.customHeaders.forEach {
+            set(it.field, it.value)
+        }
+
+        set(HttpHeaders.Referrer, credentials.instanceUrl)
+    }
+}
+
+/**
+ * Sends one request with auth headers, maps failures to [TandoorRequestsError]
+ * and retries according to [TandoorClient.retryPolicy].
+ */
+private suspend fun TandoorClient.execute(
+    endpoint: String,
+    method: HttpMethod,
+    client: HttpClient,
+    build: HttpRequestBuilder.() -> Unit
+): HttpResponse {
+    val url = resolveUrl(endpoint)
+    var attempt = 0
+
+    while(true) {
+        Logger.d("TandoorRequests") { "Method: $method, URL: ${credentials.instanceUrl.redactForRelease()}/api${endpoint}, attempt: ${attempt + 1}" }
+
+        val error = try {
+            val response = client.request {
+                url(url)
+                this.method = method
+                applyTandoorAuth(credentials)
+                build()
+            }
+
+            // 4xx/5xx still means Tandoor answered — server reachable, just refused.
+            reportCallSuccess()
+            if(response.status.isSuccess()) return response
+
+            TandoorRequestsError(null, response)
+        } catch(e: CancellationException) {
+            throw e
+        } catch(e: TandoorRequestsError) {
+            throw e
+        } catch(e: Exception) {
+            Logger.w("TandoorRequests.kt") { "Transport failure: ${e::class.simpleName}: ${e.message}" }
+            reportCallNetworkFailure()
+            TandoorRequestsError(e, null)
+        }
+
+        if(!retryPolicy.shouldRetry(method, attempt, error)) throw error
+
+        val wait = retryPolicy.delayMillis(attempt, error.retryAfterSeconds)
+        Logger.i("TandoorRequests") { "Retrying $method after ${error.kind} in ${wait}ms" }
+        delay(wait)
+        attempt++
+    }
 }
 
 suspend fun TandoorClient.reqAny(
@@ -49,63 +195,13 @@ suspend fun TandoorClient.reqAny(
     contentType: ContentType? = null,
     custom: HttpRequestBuilder.() -> Unit = { },
     customHttpClient: HttpClient? = null
-): HttpResponse {
-    try {
-        val token = this.credentials.token
-        val cookie = this.credentials.cookie
-
-        Logger.d("TandoorRequests") { "Method: $_method, URL: ${credentials.instanceUrl.redactForRelease()}/api${endpoint}" }
-
-        val url = if(endpoint.startsWith("@")) {
-            "${credentials.instanceUrl}/${endpoint.substring(1)}"
-        } else {
-            "${credentials.instanceUrl}/api${endpoint}"
-        }
-
-        val response = (customHttpClient ?: httpClient).request {
-            url(url)
-            method = _method
-            headers {
-                if(token != null) set("Authorization", "Bearer ${token.token}")
-
-                if(cookie != null) {
-                    val csrfToken =
-                        cookie.replace(Regex(".*csrftoken="), "").replace(Regex(";.*"), "")
-                    set("X-CSRFTOKEN", csrfToken)
-                    set("Cookie", cookie)
-                }
-
-                credentials.customHeaders.forEach {
-                    set(it.field, it.value)
-                }
-
-                set("Referer", credentials.instanceUrl)
-            }
-            if(data != null && contentType != null) {
-                setBody(data.toString())
-                contentType(contentType)
-            }
-
-            custom()
-        }
-
-        // 4xx/5xx still means Tandoor answered — server reachable, just refused.
-        reportCallSuccess()
-        if(!response.status.isSuccess())
-            throw TandoorRequestsError(null, response)
-
-        return response
-    } catch(e: kotlinx.coroutines.CancellationException) {
-        throw e
-    } catch(e: Exception) {
-        if(e is TandoorRequestsError) {
-            throw e
-        } else {
-            Logger.w("TandoorRequests.kt") { "Transport failure: ${e::class.simpleName}: ${e.message}" }
-            reportCallNetworkFailure()
-            throw TandoorRequestsError(e, null)
-        }
+): HttpResponse = execute(endpoint, _method, customHttpClient ?: httpClient) {
+    if(data != null && contentType != null) {
+        setBody(data.toString())
+        contentType(contentType)
     }
+
+    custom()
 }
 
 suspend fun TandoorClient.req(
@@ -158,62 +254,12 @@ suspend fun TandoorClient.reqMultipart(
     endpoint: String,
     _method: HttpMethod,
     _formData: FormBuilder.() -> Unit
-): HttpResponse {
-    try {
-        val token = this.credentials.token
-        val cookie = this.credentials.cookie
-
-        Logger.d("TandoorRequests") { "Method: $_method, URL: ${credentials.instanceUrl.redactForRelease()}/api${endpoint}" }
-
-        val url = if(endpoint.startsWith("@")) {
-            "${credentials.instanceUrl}/${endpoint.substring(1)}"
-        } else {
-            "${credentials.instanceUrl}/api${endpoint}"
-        }
-
-        val response = longHttpClient.request {
-            url(url)
-            method = _method
-            headers {
-                if(token != null) set("Authorization", "Bearer ${token.token}")
-
-                if(cookie != null) {
-                    val csrfToken =
-                        cookie.replace(Regex(".*csrftoken="), "").replace(Regex(";.*"), "")
-                    set("X-CSRFTOKEN", csrfToken)
-                    set("Cookie", cookie)
-                }
-
-                credentials.customHeaders.forEach {
-                    set(it.field, it.value)
-                }
-
-                set("Referer", credentials.instanceUrl)
-            }
-
-            setBody(
-                MultiPartFormDataContent(
-                    formData(_formData)
-                )
-            )
-        }
-
-        reportCallSuccess()
-        if(!response.status.isSuccess())
-            throw TandoorRequestsError(null, response)
-
-        return response
-    } catch(e: kotlinx.coroutines.CancellationException) {
-        throw e
-    } catch(e: Exception) {
-        if(e is TandoorRequestsError) {
-            throw e
-        } else {
-            Logger.w("TandoorRequests.kt") { "Transport failure: ${e::class.simpleName}: ${e.message}" }
-            reportCallNetworkFailure()
-            throw TandoorRequestsError(e, null)
-        }
-    }
+): HttpResponse = execute(endpoint, _method, longHttpClient) {
+    setBody(
+        MultiPartFormDataContent(
+            formData(_formData)
+        )
+    )
 }
 
 suspend fun TandoorClient.getObject(endpoint: String) = reqObject(endpoint, HttpMethod.Get)

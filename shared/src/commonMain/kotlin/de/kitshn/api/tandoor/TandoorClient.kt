@@ -20,6 +20,7 @@ import de.kitshn.api.tandoor.route.TandoorUnitRoute
 import de.kitshn.api.tandoor.route.TandoorUserPreferenceRoute
 import de.kitshn.api.tandoor.route.TandoorUserRoute
 import de.kitshn.isTlsException
+import io.ktor.client.HttpClient
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -59,9 +60,21 @@ data class TandoorCredentials(
     val mtlsCertificatePassword: String? = null,
 )
 
+/**
+ * Builds the HTTP client for one timeout. Production uses the platform engine
+ * ([createTandoorHttpClient]); tests pass a client backed by a mock engine.
+ */
+typealias TandoorHttpClientFactory = (
+    credentials: TandoorCredentials,
+    timeoutMillis: Long,
+    onCertificateRequested: () -> Unit
+) -> HttpClient
+
 class TandoorClient(
     val credentials: TandoorCredentials,
-    var timeoutSettings: TandoorTimeoutSettings = TandoorTimeoutSettings()
+    var timeoutSettings: TandoorTimeoutSettings = TandoorTimeoutSettings(),
+    var retryPolicy: TandoorRetryPolicy = TandoorRetryPolicy(),
+    private val httpClientFactory: TandoorHttpClientFactory = ::createTandoorHttpClient
 ) {
 
     var certificateRequested: Boolean = false
@@ -70,11 +83,11 @@ class TandoorClient(
     /** `true` when the last connection failure was a cert error */
     val needsClientCertificate: Boolean get() = certificateRequested || tlsHandshakeFailed
 
-    var httpClient = createTandoorHttpClient(credentials, timeoutSettings.shortTimeout) {
+    var httpClient = httpClientFactory(credentials, timeoutSettings.shortTimeout) {
         certificateRequested = true
     }
 
-    var longHttpClient = createTandoorHttpClient(credentials, timeoutSettings.longTimeout) {
+    var longHttpClient = httpClientFactory(credentials, timeoutSettings.longTimeout) {
         certificateRequested = true
     }
 
@@ -85,11 +98,11 @@ class TandoorClient(
         httpClient.close()
         longHttpClient.close()
 
-        httpClient = createTandoorHttpClient(credentials, timeoutSettings.shortTimeout) {
+        httpClient = httpClientFactory(credentials, timeoutSettings.shortTimeout) {
             certificateRequested = true
         }
 
-        longHttpClient = createTandoorHttpClient(credentials, timeoutSettings.longTimeout) {
+        longHttpClient = httpClientFactory(credentials, timeoutSettings.longTimeout) {
             certificateRequested = true
         }
     }

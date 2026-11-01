@@ -4,6 +4,8 @@ import de.kitshn.api.tandoor.TandoorCredentials
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.attribute.PosixFilePermission
 import java.security.KeyStore
 import java.security.SecureRandom
 import javax.crypto.Cipher
@@ -19,7 +21,10 @@ private const val GCM_IV_LENGTH = 12
 
 actual class SecureCredentialStore actual constructor() {
     private val credentialsFlow = MutableStateFlow<TandoorCredentials?>(null)
-    private val storageDir = File(System.getProperty("user.home"), ".kitshn").apply { mkdirs() }
+    private val storageDir = File(System.getProperty("user.home"), ".kitshn").apply {
+        mkdirs()
+        restrictToOwner(this, directory = true)
+    }
 
     init {
         credentialsFlow.value = readEncrypted()
@@ -61,6 +66,7 @@ actual class SecureCredentialStore actual constructor() {
             KeyStore.PasswordProtection(password)
         )
         keystoreFile.outputStream().use { keyStore.store(it, password) }
+        restrictToOwner(keystoreFile)
 
         return key
     }
@@ -72,7 +78,9 @@ actual class SecureCredentialStore actual constructor() {
         cipher.init(Cipher.ENCRYPT_MODE, key, GCMParameterSpec(GCM_TAG_LENGTH, iv))
 
         val encrypted = cipher.doFinal(plaintext.toByteArray(Charsets.UTF_8))
-        File(storageDir, CREDENTIALS_FILE).writeBytes(iv + encrypted)
+        val file = File(storageDir, CREDENTIALS_FILE)
+        file.writeBytes(iv + encrypted)
+        restrictToOwner(file)
     }
 
     private fun readEncrypted(): TandoorCredentials? {
@@ -95,5 +103,20 @@ actual class SecureCredentialStore actual constructor() {
         } catch(_: Exception) {
             null
         }
+    }
+}
+
+/**
+ * The key file sits next to the encrypted credentials, so file permissions are the
+ * real protection against other local users. No-op on file systems without POSIX
+ * permissions (Windows), where the user profile directory is already private.
+ */
+private fun restrictToOwner(file: File, directory: Boolean = false) {
+    try {
+        val perms = mutableSetOf(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE)
+        if(directory) perms += PosixFilePermission.OWNER_EXECUTE
+        Files.setPosixFilePermissions(file.toPath(), perms)
+    } catch(_: UnsupportedOperationException) {
+    } catch(_: java.io.IOException) {
     }
 }
