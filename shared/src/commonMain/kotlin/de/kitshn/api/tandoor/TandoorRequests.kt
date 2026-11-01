@@ -148,7 +148,7 @@ private suspend fun TandoorClient.execute(
     endpoint: String,
     method: HttpMethod,
     client: HttpClient,
-    build: HttpRequestBuilder.() -> Unit
+    configure: HttpRequestBuilder.() -> Unit
 ): HttpResponse {
     val url = resolveUrl(endpoint)
     var attempt = 0
@@ -161,7 +161,8 @@ private suspend fun TandoorClient.execute(
                 url(url)
                 this.method = method
                 applyTandoorAuth(credentials)
-                build()
+                // explicit receiver: a bare build() would resolve to HttpRequestBuilder.build()
+                configure(this)
             }
 
             // 4xx/5xx still means Tandoor answered — server reachable, just refused.

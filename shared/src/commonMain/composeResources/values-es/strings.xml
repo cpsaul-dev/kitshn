@@ -368,4 +368,7 @@
     <string name="common_ai_provider">Proveedor de IA</string>
     <string name="common_by">Por</string>
     <string name="common_color">Color</string>
+    <string name="onboarding_sign_in_error_invalid_credentials">Usuario/email o contraseña incorrectos.</string>
+    <string name="onboarding_sign_in_error_second_factor_required">Esta cuenta usa verificación en dos pasos. Usa » Iniciar sesión usando el navegador web « o un token de API.</string>
+    <string name="onboarding_sign_in_error_login_session_unavailable">El servidor no inició la sesión de login. Comprueba que la URL apunta a Tandoor 2 y que ningún proxy bloquea /_allauth/.</string>
 </resources>

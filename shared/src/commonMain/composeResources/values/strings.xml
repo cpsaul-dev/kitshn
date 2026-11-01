@@ -544,4 +544,7 @@
         <item>at least</item>
         <item>up to</item>
     </string-array>
+    <string name="onboarding_sign_in_error_invalid_credentials">Wrong username/email or password.</string>
+    <string name="onboarding_sign_in_error_second_factor_required">This account uses two-factor authentication. Use » Log in using web browser « or an API token.</string>
+    <string name="onboarding_sign_in_error_login_session_unavailable">The server did not start a login session. Check that the URL points to Tandoor 2 and that no proxy blocks /_allauth/.</string>
 </resources>

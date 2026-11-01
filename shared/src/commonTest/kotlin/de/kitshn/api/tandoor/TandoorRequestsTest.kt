@@ -13,6 +13,7 @@ import io.ktor.client.request.HttpResponseData
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -27,6 +28,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -196,6 +198,43 @@ class TandoorRequestsTest {
 
         assertEquals(1, server.requests.size)
         assertEquals(HttpMethod.Post, server.requests.single().method)
+    }
+
+    @Test
+    fun jsonBodyAndExtraHeadersAreSent() = runTest {
+        val server = fakeServer { _, _ -> ok("""{"id":7}""") }
+
+        server.client.postObject("/recipe/", buildJsonObject { put("name", "Paella") })
+        server.client.reqAny(
+            "/recipe/7/",
+            HttpMethod.Patch,
+            data = """{"servings":4}""",
+            contentType = io.ktor.http.ContentType.Application.Json,
+            custom = { headers.append("X-Test", "1") }
+        )
+
+        val post = server.requests[0]
+        val postBody = assertIs<TextContent>(post.body)
+        assertEquals("""{"name":"Paella"}""", postBody.text)
+        assertEquals("application/json", postBody.contentType.withoutParameters().toString())
+
+        val patch = server.requests[1]
+        assertEquals("""{"servings":4}""", assertIs<TextContent>(patch.body).text)
+        assertEquals("1", patch.headers["X-Test"])
+        assertEquals("Bearer secret-token", patch.headers[HttpHeaders.Authorization])
+    }
+
+    @Test
+    fun multipartUploadSendsFormData() = runTest {
+        val server = fakeServer { _, _ -> ok("{}") }
+
+        server.client.putMultipart("/recipe/7/image/") {
+            append("image_url", "https://example.com/paella.jpg")
+        }
+
+        val body = server.requests.single().body
+        assertIs<io.ktor.client.request.forms.MultiPartFormDataContent>(body)
+        assertTrue(body.contentType.toString().startsWith("multipart/form-data"))
     }
 
     @Test

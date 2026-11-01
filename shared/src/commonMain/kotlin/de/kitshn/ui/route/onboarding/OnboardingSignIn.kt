@@ -92,6 +92,7 @@ import co.touchlab.kermit.Logger
 import com.eygraber.uri.Uri
 import de.kitshn.Platforms
 import de.kitshn.api.tandoor.TandoorClient
+import de.kitshn.api.tandoor.route.TandoorLoginResult
 import de.kitshn.api.tandoor.TandoorCredentials
 import de.kitshn.api.tandoor.TandoorCredentialsCustomHeader
 import de.kitshn.api.tandoor.TandoorCredentialsToken
@@ -136,6 +137,9 @@ import kitshn.shared.generated.resources.onboarding_sign_in_error_client_certifi
 import kitshn.shared.generated.resources.onboarding_sign_in_error_instance_not_reachable
 import kitshn.shared.generated.resources.onboarding_sign_in_error_instance_not_reachable_local_network_hint
 import kitshn.shared.generated.resources.onboarding_sign_in_error_instance_not_reachable_sso_hint
+import kitshn.shared.generated.resources.onboarding_sign_in_error_invalid_credentials
+import kitshn.shared.generated.resources.onboarding_sign_in_error_login_session_unavailable
+import kitshn.shared.generated.resources.onboarding_sign_in_error_second_factor_required
 import kitshn.shared.generated.resources.onboarding_sign_in_error_sign_in_failed
 import kitshn.shared.generated.resources.onboarding_sign_in_hint_credentials_required
 import kitshn.shared.generated.resources.onboarding_sign_in_mtls_required_dialog_description
@@ -243,7 +247,11 @@ fun RouteOnboardingSignIn(
     var tokenValue by rememberSaveable { mutableStateOf("") }
 
     val loginState = rememberTandoorRequestState()
-    LaunchedEffect(usernameValue, passwordValue, tokenValue) { loginState.reset() }
+    var loginErrorMessage by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(usernameValue, passwordValue, tokenValue) {
+        loginState.reset()
+        loginErrorMessage = null
+    }
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -309,21 +317,41 @@ fun RouteOnboardingSignIn(
                     )
 
                     val client = TandoorClient(credentials)
-                    client.allAuth.login()?.let {
-                        credentials.cookie = it
+                    when(val result = client.allAuth.login()) {
+                        is TandoorLoginResult.Success -> {
+                            credentials.cookie = result.cookie
 
-                        TandoorRequestState().wrapRequest {
-                            val user = p.vm.tandoorClient?.user?.get()
-                            if (user != null) p.vm.uiState.userDisplayName = user.display_name
+                            TandoorRequestState().wrapRequest {
+                                val user = p.vm.tandoorClient?.user?.get()
+                                if (user != null) p.vm.uiState.userDisplayName = user.display_name
+                            }
+
+                            p.vm.signIn(client, credentials)
+
+                            hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
+                            return@wrapRequest
                         }
 
-                        p.vm.signIn(client, credentials)
-
-                        hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
-                        return@wrapRequest
+                        is TandoorLoginResult.Failure -> {
+                            val message = when(result.reason) {
+                                TandoorLoginResult.Reason.InvalidCredentials ->
+                                    getString(Res.string.onboarding_sign_in_error_invalid_credentials)
+                                TandoorLoginResult.Reason.SecondFactorRequired ->
+                                    getString(Res.string.onboarding_sign_in_error_second_factor_required)
+                                TandoorLoginResult.Reason.CsrfUnavailable ->
+                                    getString(Res.string.onboarding_sign_in_error_login_session_unavailable)
+                                TandoorLoginResult.Reason.Unexpected ->
+                                    result.serverMessage
+                                        ?: getString(Res.string.onboarding_sign_in_error_sign_in_failed)
+                            }
+                            loginErrorMessage = message
+                            throw TandoorRequestsError(
+                                null,
+                                null,
+                                overrideMessage = "Login failed (${result.reason}, status ${result.status}, code ${result.serverCode}): $message"
+                            )
+                        }
                     }
-
-                    throw TandoorRequestsError(null, null, overrideMessage = "Login failed: server did not return a token")
                 }
             }
 
@@ -576,7 +604,7 @@ fun RouteOnboardingSignIn(
                         isError = loginState.state == TandoorRequestStateState.ERROR,
                         supportingText = {
                             if (loginState.state == TandoorRequestStateState.ERROR)
-                                Text(stringResource(Res.string.onboarding_sign_in_error_sign_in_failed))
+                                Text(loginErrorMessage ?: stringResource(Res.string.onboarding_sign_in_error_sign_in_failed))
                         },
 
                         keyboardActions = KeyboardActions(
@@ -612,7 +640,7 @@ fun RouteOnboardingSignIn(
                         isError = loginState.state == TandoorRequestStateState.ERROR,
                         supportingText = {
                             if (loginState.state == TandoorRequestStateState.ERROR)
-                                Text(stringResource(Res.string.onboarding_sign_in_error_sign_in_failed))
+                                Text(loginErrorMessage ?: stringResource(Res.string.onboarding_sign_in_error_sign_in_failed))
                         },
 
                         keyboardActions = KeyboardActions(
@@ -653,7 +681,7 @@ fun RouteOnboardingSignIn(
                         isError = loginState.state == TandoorRequestStateState.ERROR,
                         supportingText = {
                             if (loginState.state == TandoorRequestStateState.ERROR)
-                                Text(stringResource(Res.string.onboarding_sign_in_error_sign_in_failed))
+                                Text(loginErrorMessage ?: stringResource(Res.string.onboarding_sign_in_error_sign_in_failed))
                         },
 
                         keyboardActions = KeyboardActions(
